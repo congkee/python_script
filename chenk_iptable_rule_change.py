@@ -5,10 +5,10 @@
 import os
 import subprocess
 import time
-import json
+import urllib2
 
 
-# import requests
+# import requests --python3+
 
 
 def old_rules():
@@ -20,12 +20,12 @@ def old_rules():
     if os.path.isfile(iptables_rules_txt):
         with open(iptables_rules_txt, 'r') as f:
             for line in f:
-                old_rules_list.append(line.strip())
+                old_rules_list.append(line.strip('\n'))
     else:
         subprocess.Popen('iptables -nL INPUT > /tmp/iptables_rules_txt', shell=True).wait()
         with open(iptables_rules_txt, 'r') as f:
             for line in f:
-                old_rules_list.append(line.strip())
+                old_rules_list.append(line.strip('\n'))
     return old_rules_list
 
 
@@ -66,8 +66,11 @@ def diff_rules():
 def push_falcon():
     ts = int(time.time())
     data = diff_rules()
-    # hostname = subprocess.Popen('cat /usr/local/falcon-agent/config/cfg.json | grep hostname | awk -F "\"" "{print $4}"', shell=True, stdout=subprocess.PIPE).communicate()
-    hostname = "test"
+    hostname = subprocess.Popen(
+        'cat /usr/local/falcon-agent/config/cfg.json | grep hostname | awk -F "\"" "{print $4}"', shell=True,
+        stdout=subprocess.PIPE).communicate()
+    print(hostname)
+    # hostname = "test"
     push_data = {
         "endpoint": hostname,
         "metric": "iptables_rule",
@@ -78,7 +81,9 @@ def push_falcon():
         "tags": 'change_rules="{status}{change_rules}'.format(change_rules=data['change_rules'], status=data['status']),
     }
     print(push_data)
-    # requests.post("http://127.0.0.1:1988/v1/push", data=push_data)
+    # requests.post("http://127.0.0.1:1988/v1/push", data=push_data) --python3+
+    urllib2.Request("http://127.0.0.1:1988/v1/push", data=push_data)
+    subprocess.Popen('iptables -nL INPUT > /tmp/iptables_rules_txt', shell=True).wait()  # 将现有新规则写入到文件,用作下次对比的旧规则
 
 
 if __name__ == '__main__':
