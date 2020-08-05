@@ -96,7 +96,7 @@ class HostGroup(object):
     @staticmethod
     def hostgroup_list():
         """主机组列表"""
-        api = "/api/vq/hostgroup"
+        api = "/api/v1/hostgroup"
         r = requests.get(falcon_url + api, headers=User.login_auth())
         return r
 
